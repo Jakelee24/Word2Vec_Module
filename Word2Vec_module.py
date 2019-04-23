@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 # for small is 124
 # for large is 65466
 # vocabulary_size = 65466
-class Word2Vec:
+class Preprocesser:
     def __init__(self, training_data, vocabulary_size):
         basedir = os.getcwd()
         self.__training_data_pth = training_data
@@ -159,15 +159,15 @@ if __name__ == '__main__':
     #num_steps = 50001  # steps to run for
     num_steps = 50001
     steps_per_checkpoint = 50 # save the params every 50 steps.
-    word2vec = Word2Vec("training-data-large.txt", vocabulary_size)
+    data_preprocess = Preprocesser("training-data-large.txt", vocabulary_size)
     basedir = os.getcwd()
 
-    data, count, dictionary, reverse_dictionary = word2vec.build_dataset(basedir)
+    data, count, dictionary, reverse_dictionary = data_preprocess.build_dataset(basedir)
     # save the dictionary to file - very important for Data Processor
     Helper.store_stuff(dictionary, "dictionary.pickle", reverse_dictionary, "reverse_dictionary.pickle")
     print('Most common words (+UNK)', count[:5])
     print('Sample data', data[:10])
-    word2vec.batch_tester(data, reverse_dictionary)
+    data_preprocess.batch_tester(data, reverse_dictionary)
     print('three index', dictionary['X773579'])
 
     ckpt_path = os.path.join(basedir, 'checkpoints')
@@ -294,7 +294,7 @@ if __name__ == '__main__':
         plot_only = 100
         low_dim_embs = tsne.fit_transform(final_embeddings[1:plot_only+1, :])
         labels = [reverse_dictionary[i] for i in range(plot_only)]
-        word2vec.plot_with_labels(low_dim_embs, labels)
+        data_preprocess.plot_with_labels(low_dim_embs, labels)
 
         # from here, need to take the embedding parameters and then pass them to the next stage of the
         # system - the sentiment analyser
