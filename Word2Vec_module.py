@@ -417,7 +417,7 @@ if __name__ == '__main__':
             print('Initialized')
         average_loss = 0
         for step in range(num_steps):
-            batch_data, batch_labels = word2vec.generate_batch(data, batch_size, num_skips, skip_window)
+            batch_data, batch_labels = data_preprocess.generate_batch(data, batch_size, num_skips, skip_window)
             feed_dict = {train_dataset: batch_data, train_labels: batch_labels}
             _, l = session.run([optimizer, loss], feed_dict=feed_dict)
             average_loss += l
