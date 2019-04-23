@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 # for small is 124
 # for large is 65466
 # vocabulary_size = 65466
-class Preprocesser:
+class Data_Processer:
     def __init__(self, training_data, vocabulary_size):
         basedir = os.getcwd()
         self.__training_data_pth = training_data
@@ -138,6 +138,66 @@ class Preprocesser:
 
         plt.savefig(filename)
 
+class Word2Vec:
+    def __init__(self, batch_size, embedding_size, vocabulary_size):
+        self.__batch_size = batch_size
+        self.__embedding_size = embedding_size
+        self.__vocabulary_size = vocabulary_size
+        self.__optimizer = None
+        self.__similarity = None
+        self.__valid_size = None
+        self.__valid_window = None
+
+    def optmize(self, valid_size, valid_window, num_sampled):
+        valid_examples = np.array(random.sample(range(valid_window), valid_size))
+        graph = tf.Graph()
+        with graph.as_default():
+            # variable to track progress
+            global_step = tf.Variable(0, trainable=False)
+
+            # Input data.
+            train_dataset = tf.placeholder(tf.int32, shape=[batch_size])
+            train_labels = tf.placeholder(tf.int32, shape=[batch_size, 1])
+            valid_dataset = tf.constant(valid_examples, dtype=tf.int32)
+            with tf.device('/cpu:0'):
+                # Variables.
+                embeddings = tf.Variable(tf.random_uniform([self.__vocabulary_size, self.__embedding_size], -1.0, 1.0), 
+                                        name = "embeddings")
+                nce_weights = tf.Variable(
+                    tf.truncated_normal([self.__vocabulary_size, self.__embedding_size],
+                                        stddev=1.0 / math.sqrt(self.__embedding_size)))
+                nce_biases = tf.Variable(tf.zeros([self.__vocabulary_size]))
+
+                # Model.
+                # Look up embeddings for inputs.
+                # note that the embeddings are Variable params that will
+                # be optimised!
+                embed = tf.nn.embedding_lookup(embeddings, train_dataset)
+            # Compute the nce loss, using a sample of the negative labels each time.
+            # tried using sampled_softmax_loss, but performance was worse, so decided
+            # to use NCE loss instead. Might be worth some more testing, especially with
+            # the hyperparameters (ie num_sampled), to see what gives the best performance.
+            loss = tf.reduce_mean(
+                tf.nn.nce_loss(nce_weights, nce_biases, train_labels,
+                                embed, num_sampled, self.__vocabulary_size))
+
+            # PART BELOW LIFTED FROM TF EXAMPLES
+            # Optimizer.
+            # Note: The optimizer will optimize the nce weights AND the embeddings.
+            # This is because the embeddings are defined as a variable quantity and the
+            # optimizer's `minimize` method will by default modify all variable quantities 
+            # that contribute to the tensor it is passed.
+            # See docs on `tf.train.Optimizer.minimize()` for more details.
+            self.__optimizer = tf.train.GradientDescentOptimizer(1.0).minimize(loss, global_step=global_step)
+
+            # Compute the similarity between minibatch examples and all embeddings.
+            # We use the cosine distance:
+            norm = tf.sqrt(tf.reduce_sum(tf.square(embeddings), 1, keepdims =True))
+            normalized_embeddings = embeddings / norm
+            valid_embeddings = tf.nn.embedding_lookup(
+                normalized_embeddings, valid_dataset)
+            self.__similarity = tf.matmul(valid_embeddings, tf.transpose(normalized_embeddings))
+
 
 # Module test
 if __name__ == '__main__':
@@ -159,7 +219,7 @@ if __name__ == '__main__':
     #num_steps = 50001  # steps to run for
     num_steps = 50001
     steps_per_checkpoint = 50 # save the params every 50 steps.
-    data_preprocess = Preprocesser("training-data-large.txt", vocabulary_size)
+    data_preprocess = Data_Processer("training-data-large.txt", vocabulary_size)
     basedir = os.getcwd()
 
     data, count, dictionary, reverse_dictionary = data_preprocess.build_dataset(basedir)
