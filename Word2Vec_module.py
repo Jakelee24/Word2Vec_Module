@@ -129,7 +129,7 @@ class Data_Processer:
             x = round(x,4)
             y = round(y,4)
             plt.scatter(x, y)
-            plt.annotate(unicode(label,"utf-8"),
+            plt.annotate(str(label),
                             xy=(x, y),
                             xytext=(5, 2),
                             textcoords='offset points',
@@ -354,7 +354,7 @@ if __name__ == '__main__':
         train_dataset = tf.placeholder(tf.int32, shape=[batch_size])
         train_labels = tf.placeholder(tf.int32, shape=[batch_size, 1])
         valid_dataset = tf.constant(valid_examples, dtype=tf.int32)
-        with tf.device('/gpu:0'):
+        with tf.device('/cpu:0'):
             # Variables.
             embeddings = tf.Variable(tf.random_uniform([vocabulary_size, embedding_size], -1.0, 1.0), 
                                     name = "embeddings")
