@@ -5,12 +5,12 @@ from __future__ import print_function
 import collections
 import math
 import urllib
-import urllib2
+import urllib.request
 import tarfile
 import os
 import random
 import string
-import cPickle
+import pickle
 from Helper import Helper
 
 import numpy as np
@@ -121,7 +121,7 @@ class Data_Processer:
             print('    batch:', [reverse_dictionary[bi] for bi in batch])
             print('    labels:', [reverse_dictionary[li] for li in labels.reshape(8)])
 
-    def plot_with_labels(low_dim_embs, labels, filename='tsne.png'):
+    def plot_with_labels(self, low_dim_embs, labels, filename='tsne.png'):
         assert low_dim_embs.shape[0] >= len(labels), "More labels than embeddings"
         plt.figure(figsize=(18, 18))  # in inches
         for i, label in enumerate(labels):
@@ -165,7 +165,7 @@ class Word2Vec:
         # system - the sentiment analyser
         # ie , save final_embeddings. This has been done in the actual operation.
 
-    def generate_batch(self, data, batch_size, num_skips, skip_window):
+    def __generate_batch(self, data, batch_size, num_skips, skip_window):
         assert batch_size % num_skips == 0
         assert num_skips <= 2 * skip_window
         data_index = 0
@@ -213,7 +213,7 @@ class Word2Vec:
                 print('Initialized')
             average_loss = 0
             for step in range(num_steps):
-                batch_data, batch_labels = generate_batch(data, self.__batch_size, 
+                batch_data, batch_labels = self.__generate_batch(data, self.__batch_size, 
                 self.__num_skips, self.__skip_window)
 
                 feed_dict = {train_dataset: batch_data, train_labels: batch_labels}
@@ -354,7 +354,7 @@ if __name__ == '__main__':
         train_dataset = tf.placeholder(tf.int32, shape=[batch_size])
         train_labels = tf.placeholder(tf.int32, shape=[batch_size, 1])
         valid_dataset = tf.constant(valid_examples, dtype=tf.int32)
-        with tf.device('/cpu:0'):
+        with tf.device('/gpu:0'):
             # Variables.
             embeddings = tf.Variable(tf.random_uniform([vocabulary_size, embedding_size], -1.0, 1.0), 
                                     name = "embeddings")
